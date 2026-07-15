@@ -1,5 +1,4 @@
 
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -56,7 +55,7 @@ if not df_filtered.empty:
         st.metric(
             label=f"Estimated CBAM Tariff for {target_country} in {latest_year_num}",
             value=f"€{total_tariff:,.2f}",
-            delta="Exposed Net Exporter of Carbon Emissions"
+            delta="Exposed Net Exporter of Carbon Emissions",
             delta_color="inverse"
         )
     else:
@@ -109,7 +108,7 @@ if not df_filtered.empty:
         x="year",
         y=["co2","consumption_co2"],
         labels={"value":"CO2 Emissions (million tonnes)","year":"Year","variable":"Emission Type"},
-        title=f"Carbon Emissions Production VS Consumption for {target_country}"
+        title=f"Carbon Emissions Production VS Consumption for {target_country}",
         color_discrete_map={"co2":"blue","consumption_co2":"red"}
     )
     new_names={"co2":"Production Emissions","consumption_co2":"Consumption Emissions"}
@@ -120,9 +119,9 @@ if not df_filtered.empty:
         hovermode="x unified",
         margin=dict(r=10, t=30, l=10, b=10),
         legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="right",x=1)
-
+    )
     st.plotly_chart(fig_line,use_container_width=True)
-    else:
+else:
     st.warning(f"No data available for {target_country} from 2000 onwards.")
 st.caption("Data Source: Our World in Data (OWID) - CO2 and Greenhouse Gas Emissions Dataset")
 
@@ -153,5 +152,3 @@ fig_bloc.update_layout(
 )
 
 st.plotly_chart(fig_bloc,use_container_width=True)
-
-
