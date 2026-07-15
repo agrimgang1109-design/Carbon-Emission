@@ -8,10 +8,14 @@ st.write("Global North VS Global South: Carbon Emission Tracker")
 
 @st.cache_data
 def load_data():
-    url="https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv"
-    columns=["country","year","co2","consumption_co2","cumulative_co2","population","gdp"]
-    df=pd.read_csv(url)
+    url = "https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv"
+    columns = ["country", "year", "iso_code", "co2", "consumption_co2", "cumulative_co2", "population", "gdp"]
+    df = pd.read_csv(url, usecols=columns)
+    df = df.sort_values(['country', 'year'])
+    df['gdp'] = df.groupby('country')['gdp'].ffill()
+    df['population'] = df.groupby('country')['population'].ffill()
     return df
+
 df= load_data()
 #control the sidebar
 st.sidebar.header("Control Panel")
@@ -34,6 +38,7 @@ df_filtered=df[(df['country']==target_country) & (df['year']>=2000)].copy()
 df_filtered['net_co2']= df_filtered['consumption_co2'] - df_filtered['co2']
 df_filtered['emissions_per_capita']=(df_filtered['co2']*1_000_000)/df_filtered['population']
 df_filtered['gdp_per_capita']=df_filtered['gdp']/df_filtered['population']
+df_filtered['consumption_co2'] = df_filtered['consumption_co2'].fillna(df_filtered['co2'])
 
 st.dataframe(df_filtered.tail(10))
 
@@ -68,8 +73,21 @@ if not df_filtered.empty:
 else:
     st.warning(f"No data available for {target_country} from 2000 onwards.")
 st.write("### Recent Historical data(last 10 years)")
-st.dataframe(df_filtered.tail(10)[['year','co2','consumption_co2','net_co2','population','gdp']])
 
+display_columns = ['year', 'co2', 'consumption_co2', 'net_co2', 'population', 'gdp']
+st.dataframe(
+    df_filtered[display_columns].tail(10),
+    hide_index=True,
+    use_container_width=True,
+    column_config={
+        "year": st.column_config.TextColumn("Year"),
+        "co2": st.column_config.NumberColumn("Production CO₂ (Mt)", format="%,.2f"),
+        "consumption_co2": st.column_config.NumberColumn("Consumption CO₂ (Mt)", format="%,.2f"),
+        "net_co2": st.column_config.NumberColumn("Net CO₂ (Mt)", format="%,.2f"),
+        "population": st.column_config.NumberColumn("Population", format="%,d"),
+        "gdp": st.column_config.NumberColumn("GDP", format="$%,d")
+    }
+)
 #map
 st.write("---")
 st.write("Global Carbon Heatmap")
@@ -79,8 +97,8 @@ map_data['gdp_per_capita']=map_data['gdp']/map_data['population']
 
 figure=px.choropleth(
     map_data,
-    locations="country",
-    locationmode="country names",
+    locations="iso_code",
+    locationmode="ISO-3",
     color="co2",
     hover_name="country",
     hover_data={"country":False,"co2":":,.0f","gdp_per_capita":":,.0f"},
@@ -89,10 +107,8 @@ figure=px.choropleth(
 )
 
 figure.update_layout(
-    margin=dict(r=10, t=10, l=10, b=10),
-    geo=dict(
-        showframe=False,showcoastlines=False,projection_type="equirectangular")
-
+    margin=dict(r=10, t=30, l=10, b=10),
+    geo=dict(showframe=False, showcoastlines=False, projection_type="equirectangular")
 )
 
 st.plotly_chart(figure,use_container_width=True)
