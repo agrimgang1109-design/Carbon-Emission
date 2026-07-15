@@ -34,12 +34,11 @@ eu_export_share=st.sidebar.slider(
 #data processing
 
 st.write(f"### Carbon Emission Data for {target_country}")
-df_filtered=df[(df['country']==target_country) & (df['year']>=2000)].copy()
-df_filtered['net_co2']= df_filtered['consumption_co2'] - df_filtered['co2']
-df_filtered['emissions_per_capita']=(df_filtered['co2']*1_000_000)/df_filtered['population']
-df_filtered['gdp_per_capita']=df_filtered['gdp']/df_filtered['population']
+df_filtered = df[(df['country'] == target_country) & (df['year'] >= 2000)].copy()
+df_filtered['net_co2'] = df_filtered['consumption_co2'] - df_filtered['co2']
 df_filtered['consumption_co2'] = df_filtered['consumption_co2'].fillna(df_filtered['co2'])
-
+df_filtered['emissions_per_capita'] = (df_filtered['co2'] * 1_000_000) / df_filtered['population']
+df_filtered['gdp_per_capita'] = df_filtered['gdp'] / df_filtered['population']
 
 st.dataframe(
     df_filtered.tail(10),
@@ -63,10 +62,11 @@ st.dataframe(
 #tarrif impact
 
 st.write("---")
-st.write("Impact of CBAM Carbon Tariff on Selected Country")
-df_with_consumption = df_filtered[df_filtered['consumption_co2'].notna()]
-if not df_with_consumption.empty:
-    latest_row = df_with_consumption.iloc[-1]
+st.write(f"### Impact of CBAM Carbon Tariff on {target_country}")
+df_with_trade = df_filtered.dropna(subset=['net_co2'])
+
+if not df_with_trade.empty:
+    latest_row = df_with_trade.iloc[-1]
     net_carbons = latest_row['net_co2']
     latest_year_num = int(latest_row['year'])
 
@@ -89,23 +89,8 @@ if not df_with_consumption.empty:
             delta_color="normal"
         )
 else:
-    st.warning(f"No complete consumption/trade data available for {target_country} to calculate tariffs.")
-st.write("### Recent Historical data(last 10 years)")
+    st.warning(f"No complete trade data available for {target_country} to calculate tariffs.")
 
-display_columns = ['year', 'co2', 'consumption_co2', 'net_co2', 'population', 'gdp']
-st.dataframe(
-    df_filtered[display_columns].tail(10),
-    hide_index=True,
-    use_container_width=True,
-    column_config={
-        "year": st.column_config.TextColumn("Year"),
-        "co2": st.column_config.NumberColumn("Production CO₂ (Mt)", format="%,.2f"),
-        "consumption_co2": st.column_config.NumberColumn("Consumption CO₂ (Mt)", format="%,.2f"),
-        "net_co2": st.column_config.NumberColumn("Net CO₂ (Mt)", format="%,.2f"),
-        "population": st.column_config.NumberColumn("Population", format="%,d"),
-        "gdp": st.column_config.NumberColumn("GDP", format="$%,d")
-    }
-)
 #map
 st.write("---")
 st.write("Global Carbon Heatmap")
