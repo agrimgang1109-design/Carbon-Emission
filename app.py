@@ -40,38 +40,56 @@ df_filtered['emissions_per_capita']=(df_filtered['co2']*1_000_000)/df_filtered['
 df_filtered['gdp_per_capita']=df_filtered['gdp']/df_filtered['population']
 df_filtered['consumption_co2'] = df_filtered['consumption_co2'].fillna(df_filtered['co2'])
 
-st.dataframe(df_filtered.tail(10))
+
+st.dataframe(
+    df_filtered.tail(10),
+    hide_index=True,  
+    use_container_width=True,
+    column_config={
+        "year": st.column_config.TextColumn("Year"),  
+        "country": st.column_config.TextColumn("Country"),
+        "iso_code": st.column_config.TextColumn("ISO Code"),
+        "co2": st.column_config.NumberColumn("Production CO₂ (Mt)", format="%,.2f"),
+        "consumption_co2": st.column_config.NumberColumn("Consumption CO₂ (Mt)", format="%,.2f"),
+        "cumulative_co2": st.column_config.NumberColumn("Cumulative CO₂ (Mt)", format="%,.2f"),
+        "net_co2": st.column_config.NumberColumn("Net CO₂ (Mt)", format="%,.2f"),
+        "population": st.column_config.NumberColumn("Population", format="%,d"),  
+        "gdp": st.column_config.NumberColumn("GDP", format="$%,d"),  
+        "emissions_per_capita": st.column_config.NumberColumn("Emissions Per Capita (t)", format="%,.2f"),
+        "gdp_per_capita": st.column_config.NumberColumn("GDP Per Capita", format="$%,.2f")
+    }
+)
 
 #tarrif impact
 
 st.write("---")
 st.write("Impact of CBAM Carbon Tariff on Selected Country")
-if not df_filtered.empty:
-    latest_row=df_filtered.iloc[-1]
-    net_carbons=latest_row['net_co2']
-    latest_year_num=int(latest_row['year'])
-    latest_population=int(latest_row['population'])
+df_with_consumption = df_filtered[df_filtered['consumption_co2'].notna()]
+if not df_with_consumption.empty:
+    latest_row = df_with_consumption.iloc[-1]
+    net_carbons = latest_row['net_co2']
+    latest_year_num = int(latest_row['year'])
 
-    if net_carbons<0:
-        net_exported_carbon=abs(net_carbons)
-        eu_multiplier=eu_export_share/100
-        total_tariff=net_exported_carbon*eu_multiplier*tarrif_price*1_000_000
+    if net_carbons < -0.1 and target_country != "World":
+        net_exported_carbon = abs(net_carbons)
+        eu_multiplier = eu_export_share / 100
+        total_tariff = net_exported_carbon * eu_multiplier * tarrif_price * 1_000_000
         
         st.metric(
-            label=f"Estimated CBAM Tariff for {target_country} in {latest_year_num}",
+            label=f"Estimated CBAM Tariff for {target_country} (Based on {latest_year_num} Trade Data)",
             value=f"€{total_tariff:,.2f}",
             delta="Exposed Net Exporter of Carbon Emissions",
             delta_color="inverse"
         )
     else:
         st.metric(  
-            label=  f"Estimated CBAM Tariff for {target_country} in {latest_year_num}",
-            value=f"€0.00",
-            delta="Exposed Net Importer of Carbon Emissions",
+            label=f"Estimated CBAM Tariff for {target_country} (Based on {latest_year_num} Trade Data)",
+            value="€0.00",
+            delta="Protected / Neutral Balance",
             delta_color="normal"
         )
 else:
-    st.warning(f"No data available for {target_country} from 2000 onwards.")
+    st.warning(f"No complete consumption/trade data available for {target_country} to calculate tariffs.")
 st.write("### Recent Historical data(last 10 years)")
 
 display_columns = ['year', 'co2', 'consumption_co2', 'net_co2', 'population', 'gdp']
