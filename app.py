@@ -78,7 +78,7 @@ if not df_with_trade.empty:
         st.metric(
             label=f"Estimated CBAM Tariff for {target_country} (Based on {latest_year_num} Trade Data)",
             value=f"€{total_tariff:,.2f}",
-            delta="Exposed Net Exporter of Carbon Emissions",
+            delta="-Exposed Net Exporter of Carbon Emissions",
             delta_color="inverse"
         )
     else:
